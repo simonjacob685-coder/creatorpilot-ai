@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { PageView, ActiveResult, CampaignResult, RepurposeResult, AnalyzeResult, IdeasResult } from './types';
+import { PageView, ActiveResult, CampaignResult, RepurposeResult, AnalyzeResult } from './types';
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
-import { IdeaGeneratorForm } from './components/IdeaGeneratorForm';
 import { CampaignForm } from './components/CampaignForm';
 import { RepurposeForm } from './components/RepurposeForm';
 import { AnalyzeForm } from './components/AnalyzeForm';
@@ -19,7 +18,6 @@ export default function App() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [prefilledCampaignTopic, setPrefilledCampaignTopic] = useState<string>('');
-  const [isGeneratingCampaign, setIsGeneratingCampaign] = useState<boolean>(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -37,14 +35,6 @@ export default function App() {
     setTimeout(() => setErrorMsg(null), 6000);
   }, []);
 
-  const handleIdeasSuccess = useCallback((result: IdeasResult) => {
-    const wrapped: ActiveResult = { type: 'ideas', data: result };
-    const updated = saveResultToHistory(wrapped);
-    setSavedHistory(updated);
-    setActiveResult(wrapped);
-    showToast('💡 10 Content ideas generated successfully!');
-  }, [showToast]);
-
   const handleSelectCampaignTopic = useCallback((topic: string) => {
     const safeTopic = topic || '';
     setPrefilledCampaignTopic(safeTopic);
@@ -60,67 +50,6 @@ export default function App() {
     setActivePage('results');
     showToast('✨ Campaign strategy generated successfully!');
   }, [showToast]);
-
-  const handleGenerateCampaignFromIdea = useCallback(async (ideaTitle: string, ideaDetails?: string) => {
-    setIsGeneratingCampaign(true);
-    const safeTitle = ideaTitle || 'Idea';
-    showToast(`🚀 Generating full campaign for: "${safeTitle.slice(0, 25)}..."`);
-    try {
-      const topicText = ideaDetails ? `${ideaTitle} - ${ideaDetails}` : ideaTitle;
-      const payload = {
-        topic: topicText,
-        audience: 'Creators & Viewers',
-        platform: 'YouTube',
-        style: 'Engaging & Actionable',
-      };
-
-      const [campaignRes, repurposeRes] = await Promise.all([
-        fetch('/api/campaign/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }).then(r => r.ok ? r.json() : null),
-        fetch('/api/repurpose/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rawIdea: topicText, tone: payload.style }),
-        }).then(r => r.ok ? r.json() : null),
-      ]);
-
-      if (!campaignRes && !repurposeRes) {
-        throw new Error('Failed to generate campaign strategy.');
-      }
-
-      const data = campaignRes || {};
-      const repurposeData = repurposeRes || {};
-
-      const campaignResult: CampaignResult = {
-        id: 'camp-' + Date.now(),
-        timestamp: Date.now(),
-        input: payload,
-        contentStrategy: data.contentStrategy || `Multi-platform campaign strategy for: ${ideaTitle}`,
-        titles: data.titles || repurposeData.youtubeFormat?.titleIdeas || [ideaTitle],
-        hooks: data.hooks || [repurposeData.youtubeFormat?.hook || ''],
-        videoOutline: data.videoOutline || [],
-        scriptStructure: data.scriptStructure || [],
-        description: data.description || repurposeData.youtubeFormat?.description || '',
-        hashtags: data.hashtags || repurposeData.instagramCaption?.hashtags || [],
-        thumbnailConcepts: data.thumbnailConcepts || [],
-        intelligenceScore: data.intelligenceScore || repurposeData.intelligenceScore,
-        youtubeFormat: repurposeData.youtubeFormat,
-        shortFormFormat: repurposeData.shortFormFormat,
-        instagramCaption: repurposeData.instagramCaption,
-        xThread: repurposeData.xThread,
-        facebookPost: repurposeData.facebookPost,
-      };
-
-      handleCampaignSuccess(campaignResult);
-    } catch (err: any) {
-      showError(err.message || 'Error generating campaign from idea.');
-    } finally {
-      setIsGeneratingCampaign(false);
-    }
-  }, [showToast, showError, handleCampaignSuccess]);
 
   const handleRepurposeSuccess = useCallback((result: RepurposeResult) => {
     const wrapped: ActiveResult = { type: 'repurpose', data: result };
@@ -198,16 +127,7 @@ export default function App() {
             savedHistory={savedHistory}
             onSelectResult={handleSelectHistoryResult}
             onClearHistory={handleClearHistory}
-          />
-        )}
-
-        {activePage === 'ideas' && (
-          <IdeaGeneratorForm
-            onSuccess={handleIdeasSuccess}
-            onError={showError}
             onSelectCampaignTopic={handleSelectCampaignTopic}
-            onGenerateCampaignFromIdea={handleGenerateCampaignFromIdea}
-            isGeneratingCampaign={isGeneratingCampaign}
           />
         )}
 
@@ -238,7 +158,6 @@ export default function App() {
             activeResult={activeResult}
             onNavigate={handleNavigate}
             onToast={showToast}
-            onGenerateCampaignFromIdea={handleGenerateCampaignFromIdea}
           />
         )}
       </main>

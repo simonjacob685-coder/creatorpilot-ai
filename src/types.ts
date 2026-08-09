@@ -1,26 +1,4 @@
-export type PageView = 'landing' | 'dashboard' | 'ideas' | 'campaign' | 'repurpose' | 'analyze' | 'results';
-
-export interface IdeasInput {
-  niche: string;
-  audience: string;
-  goal: string;
-}
-
-export interface ContentIdeaItem {
-  title: string;
-  whyItWorks: string;
-  hook: string;
-  bestPlatforms: string;
-  angle: string;
-  difficulty: string;
-}
-
-export interface IdeasResult {
-  id: string;
-  timestamp: number;
-  input: IdeasInput;
-  ideas: ContentIdeaItem[];
-}
+export type PageView = 'landing' | 'dashboard' | 'campaign' | 'repurpose' | 'analyze' | 'results';
 
 export interface CampaignInput {
   topic: string;
@@ -161,7 +139,25 @@ export interface AnalyzeResult {
 }
 
 export type ActiveResult = 
-  | { type: 'ideas'; data: IdeasResult }
   | { type: 'campaign'; data: CampaignResult }
   | { type: 'repurpose'; data: RepurposeResult }
   | { type: 'analyze'; data: AnalyzeResult };
+
+export interface TrendingTopicItem {
+  topic: string;
+  category: string;
+  whyTrending: string;
+  contentAngle: string;
+  searchQueries: string[];
+}
+
+export interface GroundingSource {
+  title: string;
+  uri: string;
+}
+
+export interface TrendingTopicsResult {
+  topics: TrendingTopicItem[];
+  searchTimestamp?: string;
+  groundingSources?: GroundingSource[];
+}

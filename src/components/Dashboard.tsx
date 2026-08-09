@@ -1,20 +1,105 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { PageView, ActiveResult } from '../types';
-import { Wand2, Repeat, BarChart3, ArrowRight, Sparkles, Clock, FileText, Trash2, ExternalLink, Lightbulb } from 'lucide-react';
+import { Wand2, Repeat, BarChart3, ArrowRight, Sparkles, Clock, FileText, Trash2, ExternalLink, Search, Heart, Filter, X } from 'lucide-react';
+import { TrendingTopics } from './TrendingTopics';
+import { BrandLogoGenerator } from './BrandLogoGenerator';
+import { CreatorWorkflowChecklist } from './CreatorWorkflowChecklist';
+import { ContentQualityChecklist } from './ContentQualityChecklist';
+import { DemoModeLoader } from './DemoModeLoader';
+import { TemplateLibrary } from './TemplateLibrary';
+import { TodaysGoal } from './TodaysGoal';
+import { FavoriteCampaigns } from './FavoriteCampaigns';
 
 interface DashboardProps {
   onNavigate: (page: PageView) => void;
   savedHistory: ActiveResult[];
   onSelectResult: (result: ActiveResult) => void;
   onClearHistory: () => void;
+  onSelectCampaignTopic?: (topic: string) => void;
 }
+
+const FAVORITES_KEY = 'creator_favorite_ids_v1';
 
 export const Dashboard: React.FC<DashboardProps> = React.memo(({
   onNavigate,
   savedHistory,
   onSelectResult,
   onClearHistory,
+  onSelectCampaignTopic,
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'favorites'>('newest');
+  const [favoriteIds, setFavoriteIds] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(FAVORITES_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (_e) {
+      // Ignore
+    }
+    return {};
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favoriteIds));
+    } catch (_e) {
+      // Ignore
+    }
+  }, [favoriteIds]);
+
+  const toggleFavorite = useCallback((e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setFavoriteIds((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  }, []);
+
+  const filteredHistory = useMemo(() => {
+    let list = [...savedHistory];
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((item) => {
+        let text = '';
+        if (item.type === 'campaign') {
+          text = [
+            item.data.input?.topic || '',
+            item.data.input?.audience || '',
+            item.data.description || '',
+            ...(item.data.titles || []),
+            ...(item.data.hooks || []),
+            ...(item.data.hashtags || []),
+          ].join(' ');
+        } else if (item.type === 'repurpose') {
+          text = [
+            item.data.input?.rawIdea || '',
+            item.data.youtubeFormat?.videoTitle || '',
+            item.data.shortFormFormat?.hook || '',
+            item.data.instagramCaption?.captionText || '',
+          ].join(' ');
+        } else {
+          text = [
+            item.data.input?.title || '',
+            item.data.input?.script || '',
+            ...(item.data.suggestions || []),
+          ].join(' ');
+        }
+        return text.toLowerCase().includes(q);
+      });
+    }
+
+    if (sortOrder === 'favorites') {
+      list = list.filter((item) => favoriteIds[item.data.id]);
+    } else if (sortOrder === 'oldest') {
+      list.sort((a, b) => a.data.timestamp - b.data.timestamp);
+    } else {
+      list.sort((a, b) => b.data.timestamp - a.data.timestamp);
+    }
+
+    return list;
+  }, [savedHistory, searchQuery, sortOrder, favoriteIds]);
+
   return (
     <div className="space-y-8 py-6">
       {/* Dashboard Welcome Header */}
@@ -34,7 +119,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <DemoModeLoader onLoadDemo={onSelectResult} />
           <button
             onClick={() => onNavigate('campaign')}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all"
@@ -46,6 +132,12 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
         </div>
       </div>
 
+      {/* Today's Focus Goal Input Field Widget */}
+      <TodaysGoal />
+
+      {/* Creator Brand Logo Generator Section */}
+      <BrandLogoGenerator />
+
       {/* Core Action Cards Required by User Prompt */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
@@ -53,38 +145,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
           <span>Core AI Engines</span>
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card 0: Creator Idea Generator */}
-          <div
-            onClick={() => onNavigate('ideas')}
-            id="dash-card-idea-generator"
-            className="group bg-[#121824] hover:bg-[#161e2e] border border-slate-800 hover:border-amber-500/60 rounded-2xl p-6 transition-all cursor-pointer flex flex-col justify-between space-y-6 shadow-md hover:shadow-amber-500/10"
-          >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-amber-950/80 border border-amber-700/50 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
-                  <Lightbulb className="w-6 h-6" />
-                </div>
-                <span className="px-2.5 py-1 text-[10px] font-semibold text-amber-300 bg-amber-950/60 rounded-full border border-amber-800/40">
-                  10 Ideas
-                </span>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-white group-hover:text-amber-300 transition-colors">
-                  Idea Generator
-                </h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Brainstorm 10 high-performing content ideas with why it works, hooks, best platforms, angles, and difficulty levels.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-amber-400">
-              <span>Brainstorm Ideas</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: Create Campaign */}
           <div
             onClick={() => onNavigate('campaign')}
@@ -180,36 +241,126 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
         </div>
       </div>
 
-      {/* History / Saved AI Outputs Section */}
+      {/* Creator Production Roadmap Checklist */}
+      <CreatorWorkflowChecklist />
+
+      {/* Content Quality Checklist & Creator Score */}
+      <ContentQualityChecklist />
+
+      {/* Creator Templates & Content Idea Bank */}
+      <TemplateLibrary onSelectCampaignTopic={onSelectCampaignTopic} />
+
+      {/* Trending Topics Component Grounded by Google Search */}
+      <TrendingTopics
+        onSelectCampaignTopic={onSelectCampaignTopic}
+      />
+
+      {/* Favorite Campaigns Quick Access Component */}
+      <FavoriteCampaigns
+        savedHistory={savedHistory}
+        onSelectResult={onSelectResult}
+      />
+
+      {/* History / Saved AI Outputs Section with Search & Filter */}
       <div className="space-y-4 pt-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
             <Clock className="w-4 h-4 text-indigo-400" />
-            <span>Recent Strategy Output History</span>
+            <span>Recent Strategy Output History ({savedHistory.length})</span>
           </h2>
-          {savedHistory.length > 0 && (
-            <button
-              onClick={onClearHistory}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-400 transition-colors"
-              id="clear-history-btn"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear History</span>
-            </button>
-          )}
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-52">
+              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search history & topics..."
+                className="w-full bg-[#0a0d14] border border-slate-800 rounded-xl pl-8 pr-8 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-0.5"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Sort Selector */}
+            <div className="flex items-center gap-1 bg-[#0a0d14] border border-slate-800 rounded-xl p-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setSortOrder('newest')}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-colors ${
+                  sortOrder === 'newest' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Newest
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortOrder('oldest')}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-colors ${
+                  sortOrder === 'oldest' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Oldest
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortOrder('favorites')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold transition-colors ${
+                  sortOrder === 'favorites' ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Heart className="w-3 h-3 fill-current" />
+                <span>Saved</span>
+              </button>
+            </div>
+
+            {savedHistory.length > 0 && (
+              <button
+                onClick={onClearHistory}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 border border-transparent hover:border-rose-900/40 transition-colors"
+                id="clear-history-btn"
+                title="Clear saved outputs history"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
-        {savedHistory.length === 0 ? (
-          <div className="bg-[#121824] border border-dashed border-slate-800 rounded-2xl p-8 text-center space-y-3">
-            <FileText className="w-10 h-10 text-slate-600 mx-auto" />
-            <p className="text-sm text-slate-300 font-medium">No saved strategies yet.</p>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
-              Use any of the AI engines above to generate titles, scripts, and repurposing plans. They will automatically be saved here.
-            </p>
+        {filteredHistory.length === 0 ? (
+          <div className="bg-[#121824] border border-dashed border-slate-800 rounded-2xl p-8 text-center space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-950/60 border border-indigo-800/40 flex items-center justify-center text-indigo-400 mx-auto">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-slate-200 font-bold">
+                {savedHistory.length === 0 ? 'No Saved Strategies Yet' : 'No Results Matching Search'}
+              </p>
+              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                {savedHistory.length === 0
+                  ? 'Generate your first campaign strategy or load a sample demo report instantly below.'
+                  : 'Try clearing your search query or switching sort filters.'}
+              </p>
+            </div>
+            {savedHistory.length === 0 && (
+              <div className="pt-2 flex justify-center">
+                <DemoModeLoader onLoadDemo={onSelectResult} />
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {savedHistory.map((item) => {
+            {filteredHistory.map((item) => {
               let title = '';
               let badgeColor = '';
               let typeLabel = '';
@@ -218,10 +369,6 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
                 title = item.data.input?.topic || 'Campaign Strategy';
                 badgeColor = 'text-indigo-400 bg-indigo-950/60 border-indigo-800/50';
                 typeLabel = 'Campaign Generator';
-              } else if (item.type === 'ideas') {
-                title = item.data.input?.niche ? `Ideas: ${item.data.input.niche}` : 'Generated Ideas';
-                badgeColor = 'text-amber-400 bg-amber-950/60 border-amber-800/50';
-                typeLabel = 'Idea Generator';
               } else if (item.type === 'repurpose') {
                 const raw = item.data.input?.rawIdea || 'Repurpose Content';
                 title = raw.slice(0, 50) + (raw.length > 50 ? '...' : '');
@@ -235,19 +382,33 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
                 typeLabel = `Analyzer (${item.data.engagementScore || 0}/100)`;
               }
 
+              const isFav = !!favoriteIds[item.data.id];
+
               return (
                 <div
                   key={`${item.type}-${item.data.id}`}
                   onClick={() => onSelectResult(item)}
-                  className="bg-[#121824] hover:bg-[#161e2e] border border-slate-800 hover:border-slate-700 rounded-xl p-4 cursor-pointer transition-all space-y-3 group"
+                  className="bg-[#121824] hover:bg-[#161e2e] border border-slate-800 hover:border-slate-700 rounded-xl p-4 cursor-pointer transition-all space-y-3 group relative"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className={`px-2 py-0.5 text-[10px] font-semibold rounded border ${badgeColor}`}>
                       {typeLabel}
                     </span>
-                    <span className="text-[10px] text-slate-500">
-                      {new Date(item.data.timestamp).toLocaleDateString()}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => toggleFavorite(e, item.data.id)}
+                        className={`p-1 rounded-md hover:bg-slate-800 transition-colors ${
+                          isFav ? 'text-rose-500' : 'text-slate-600 hover:text-slate-400'
+                        }`}
+                        title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-rose-500' : ''}`} />
+                      </button>
+                      <span className="text-[10px] text-slate-500">
+                        {new Date(item.data.timestamp).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
 
                   <h4 className="text-sm font-semibold text-slate-200 group-hover:text-indigo-300 line-clamp-2 transition-colors">

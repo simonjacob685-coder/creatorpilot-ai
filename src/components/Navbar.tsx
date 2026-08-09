@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageView } from '../types';
-import { Sparkles, LayoutDashboard, Wand2, Repeat, BarChart3, FileText, Compass, Lightbulb } from 'lucide-react';
+import { Sparkles, LayoutDashboard, Wand2, Repeat, BarChart3, FileText, Compass } from 'lucide-react';
+import techLogoImg from '../assets/images/creator_tech_logo_1786103562185.jpg';
 
 interface NavbarProps {
   activePage: PageView;
@@ -13,6 +14,27 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
   setActivePage,
   hasActiveResult,
 }) => {
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string>(techLogoImg);
+  const [brandName, setBrandName] = useState<string>('Nexus Creator');
+
+  useEffect(() => {
+    const loadProfile = () => {
+      const saved = localStorage.getItem('creator_brand_profile');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.logoUrl) setBrandLogoUrl(parsed.logoUrl);
+          if (parsed.brandName) setBrandName(parsed.brandName);
+        } catch (_e) {
+          // ignore error
+        }
+      }
+    };
+    loadProfile();
+    window.addEventListener('storage', loadProfile);
+    return () => window.removeEventListener('storage', loadProfile);
+  }, []);
+
   return (
     <header className="sticky top-0 z-50 bg-[#0c1017]/95 border-b border-slate-800/80 px-4 lg:px-8 py-3.5 transition-colors">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -22,13 +44,18 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
           className="flex items-center gap-3 group text-left focus:outline-none touch-manipulation"
           id="brand-logo-btn"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#0d121d] border border-indigo-500/50 shadow-lg shadow-indigo-500/20 group-hover:border-indigo-400 transition-all flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-indigo-400 group-hover:rotate-12 transition-transform duration-300" />
+          <div className="w-10 h-10 rounded-xl bg-[#0d121d] border border-indigo-500/50 shadow-lg shadow-indigo-500/20 group-hover:border-indigo-400 transition-all flex items-center justify-center overflow-hidden relative">
+            <img
+              src={brandLogoUrl}
+              alt={brandName}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-lg tracking-tight text-white group-hover:text-indigo-200 transition-colors">
-                CreatorPilot
+                {brandName || 'CreatorPilot'}
               </span>
               <span className="px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-indigo-300 bg-indigo-950/70 border border-indigo-700/50 rounded-md uppercase">
                 AI MVP
@@ -64,19 +91,6 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
             <span>Dashboard</span>
-          </button>
-
-          <button
-            onClick={() => setActivePage('ideas')}
-            id="nav-ideas-btn"
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              activePage === 'ideas'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                : 'text-amber-400/90 hover:text-amber-200 hover:bg-amber-950/40'
-            }`}
-          >
-            <Lightbulb className="w-3.5 h-3.5" />
-            <span>Idea Generator</span>
           </button>
 
           <button
@@ -166,15 +180,6 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
         >
           <LayoutDashboard className="w-4 h-4" />
           <span>Dashboard</span>
-        </button>
-        <button
-          onClick={() => setActivePage('ideas')}
-          className={`p-2 rounded-lg flex flex-col items-center gap-1 ${
-            activePage === 'ideas' ? 'text-amber-400' : 'text-slate-400'
-          }`}
-        >
-          <Lightbulb className="w-4 h-4" />
-          <span>Ideas</span>
         </button>
         <button
           onClick={() => setActivePage('campaign')}

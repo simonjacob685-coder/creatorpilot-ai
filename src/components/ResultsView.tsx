@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { ActiveResult, CampaignResult, RepurposeResult, AnalyzeResult, IdeasResult, PageView } from '../types';
+import { ActiveResult, CampaignResult, RepurposeResult, AnalyzeResult, PageView } from '../types';
 import { 
   Sparkles, Copy, Check, Download, ArrowLeft, Wand2, 
   Youtube, Video, Instagram, Twitter, Facebook, AlertTriangle, CheckCircle, TrendingUp, 
@@ -10,14 +10,12 @@ interface ResultsViewProps {
   activeResult: ActiveResult;
   onNavigate: (page: PageView) => void;
   onToast: (msg: string) => void;
-  onGenerateCampaignFromIdea?: (ideaTitle: string, ideaDetails?: string) => void;
 }
 
 export const ResultsView: React.FC<ResultsViewProps> = React.memo(({
   activeResult,
   onNavigate,
   onToast,
-  onGenerateCampaignFromIdea,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -30,14 +28,14 @@ export const ResultsView: React.FC<ResultsViewProps> = React.memo(({
     copyTimeoutRef.current = setTimeout(() => setCopiedId(null), 2000);
   }, [onToast]);
 
-  const downloadReport = useCallback(() => {
+  const downloadReport = useCallback((format: 'md' | 'txt' = 'md') => {
     let content = '';
-    let filename = 'CreatorPilot_Report.md';
+    let filename = `CreatorPilot_Report.${format}`;
 
     if (activeResult.type === 'campaign') {
       const data = activeResult.data;
       const topicStr = data.input?.topic || 'topic';
-      filename = `Campaign_${topicStr.slice(0, 20)}.md`;
+      filename = `Campaign_${topicStr.slice(0, 20)}.${format}`;
       content = `# CreatorPilot AI — Content Strategy Report\n\n`;
       content += `**Topic:** ${data.input?.topic || 'N/A'}\n`;
       content += `**Target Audience:** ${data.input?.audience || 'N/A'}\n`;
@@ -50,26 +48,10 @@ export const ResultsView: React.FC<ResultsViewProps> = React.memo(({
       content += `## 🎨 Thumbnail Concepts\n` + (data.thumbnailConcepts || []).map((t, i) => `### ${i + 1}. ${t.title}\n- **Overlay:** "${t.textOverlay}"\n- **Visual:** ${t.visualDescription}\n`).join('\n') + `\n`;
       content += `## 🏷️ Hashtags\n${(data.hashtags || []).join(' ')}\n\n`;
       content += `## 📄 Description\n${data.description || ''}\n`;
-    } else if (activeResult.type === 'ideas') {
-      const data = activeResult.data;
-      const nicheStr = data.input?.niche || 'niche';
-      filename = `Ideas_${nicheStr.slice(0, 20)}.md`;
-      content = `# CreatorPilot AI — Content Ideas Report\n\n`;
-      content += `**Niche/Topic:** ${data.input?.niche || 'N/A'}\n`;
-      content += `**Target Audience:** ${data.input?.audience || 'General Audience'}\n`;
-      content += `**Goal:** ${data.input?.goal || 'Grow Audience & Educate'}\n\n---\n\n`;
-      (data.ideas || []).forEach((idea, idx) => {
-        content += `### Idea #${idx + 1}: ${idea.title}\n`;
-        content += `- **Why it works:** ${idea.whyItWorks}\n`;
-        content += `- **Suggested Hook:** "${idea.hook}"\n`;
-        content += `- **Best Platforms:** ${idea.bestPlatforms}\n`;
-        content += `- **Angle:** ${idea.angle}\n`;
-        content += `- **Difficulty:** ${idea.difficulty}\n\n`;
-      });
     } else if (activeResult.type === 'repurpose') {
       const data = activeResult.data;
       const rawStr = data.input?.rawIdea || 'idea';
-      filename = `Repurpose_${rawStr.slice(0, 20)}.md`;
+      filename = `Repurpose_${rawStr.slice(0, 20)}.${format}`;
       content = `# CreatorPilot AI — Multi-Platform Repurpose Plan\n\n`;
       content += `**Source Idea:** ${data.input?.rawIdea || 'N/A'}\n\n`;
       content += `## 📺 YouTube Content\n**Title:** ${data.youtubeFormat?.videoTitle || ''}\n**Pinned Comment:** ${data.youtubeFormat?.pinnedComment || ''}\n\n### Outline\n` + (data.youtubeFormat?.outline || []).map((o) => `- ${o}`).join('\n') + `\n\n`;
@@ -80,7 +62,7 @@ export const ResultsView: React.FC<ResultsViewProps> = React.memo(({
     } else {
       const data = activeResult.data;
       const titleStr = data.input?.title || 'analysis';
-      filename = `Analysis_${titleStr.slice(0, 20)}.md`;
+      filename = `Analysis_${titleStr.slice(0, 20)}.${format}`;
       content = `# CreatorPilot AI — Content Retention & Hook Report\n\n`;
       content += `**Title:** ${data.input.title}\n`;
       content += `**Engagement Score:** ${data.engagementScore} / 100\n`;
@@ -91,7 +73,8 @@ export const ResultsView: React.FC<ResultsViewProps> = React.memo(({
       content += `## 🚀 Recommendations\n` + data.suggestions.map((s) => `- ${s}`).join('\n') + `\n`;
     }
 
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8;' });
+    const mimeType = format === 'txt' ? 'text/plain;charset=utf-8;' : 'text/markdown;charset=utf-8;';
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -102,12 +85,40 @@ export const ResultsView: React.FC<ResultsViewProps> = React.memo(({
     onToast(`Downloaded ${filename}!`);
   }, [activeResult, onToast]);
 
+  const copyEverything = useCallback(() => {
+    let content = '';
+    if (activeResult.type === 'campaign') {
+      const data = activeResult.data;
+      content = `CreatorPilot AI Campaign Strategy\nTopic: ${data.input?.topic || ''}\n\nTitles:\n${(data.titles || []).map((t, i) => `${i + 1}. ${t}`).join('\n')}\n\nHooks:\n${(data.hooks || []).map((h, i) => `${i + 1}. ${h}`).join('\n')}\n\nDescription:\n${data.description || ''}`;
+    } else if (activeResult.type === 'repurpose') {
+      const data = activeResult.data;
+      content = `CreatorPilot AI Repurpose Strategy\nYouTube: ${data.youtubeFormat?.videoTitle || ''}\nShorts Hook: ${data.shortFormFormat?.hook || ''}\nInstagram: ${data.instagramCaption?.captionText || ''}`;
+    } else {
+      const data = activeResult.data;
+      content = `CreatorPilot AI Audit Score: ${data.engagementScore}/100\nTitle: ${data.input.title}\nRecommendations:\n${data.suggestions.join('\n')}`;
+    }
+    navigator.clipboard.writeText(content);
+    onToast('Copied complete strategy to clipboard!');
+  }, [activeResult, onToast]);
+
+  // Compute text statistics
+  let statsText = '';
+  if (activeResult.type === 'campaign') {
+    statsText = (activeResult.data.contentStrategy || '') + (activeResult.data.description || '') + (activeResult.data.titles || []).join(' ');
+  } else if (activeResult.type === 'repurpose') {
+    statsText = (activeResult.data.youtubeFormat?.videoTitle || '') + (activeResult.data.instagramCaption?.captionText || '') + (activeResult.data.facebookPost?.postText || '');
+  } else {
+    statsText = (activeResult.data.input?.script || '') + (activeResult.data.suggestions || []).join(' ');
+  }
+  const calcWords = statsText.trim() ? statsText.trim().split(/\s+/).length : 0;
+  const calcChars = statsText.length;
+
   return (
     <div className="space-y-8 py-6 max-w-6xl mx-auto">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#121824] border border-slate-800 rounded-2xl p-6 shadow-sm">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => onNavigate('dashboard')}
               type="button"
@@ -122,24 +133,47 @@ export const ResultsView: React.FC<ResultsViewProps> = React.memo(({
               <Sparkles className="w-3.5 h-3.5" />
               <span>AI Output Ready</span>
             </span>
+            <span className="text-slate-600">•</span>
+            <span className="text-[11px] font-medium text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700/50">
+              📊 {calcWords} Words ({calcChars} Chars)
+            </span>
           </div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">
-            {activeResult.type === 'ideas' && 'Generated Content Ideas (10)'}
             {activeResult.type === 'campaign' && 'Campaign Strategy Results'}
             {activeResult.type === 'repurpose' && 'Multi-Platform Repurpose Results'}
             {activeResult.type === 'analyze' && 'Content Audit & Score Results'}
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={downloadReport}
+            onClick={copyEverything}
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#1a2333] hover:bg-slate-800 text-slate-200 border border-slate-700 transition-colors shadow-sm"
+            title="Copy complete strategy to clipboard"
+          >
+            <Copy className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Copy All</span>
+          </button>
+
+          <button
+            onClick={() => downloadReport('txt')}
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#1a2333] hover:bg-slate-800 text-slate-200 border border-slate-700 transition-colors shadow-sm"
+            title="Export as plain text file"
+          >
+            <FileText className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Export TXT</span>
+          </button>
+
+          <button
+            onClick={() => downloadReport('md')}
             type="button"
             id="download-report-btn"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-[#1a2333] hover:bg-slate-800 text-slate-200 border border-slate-700 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#1a2333] hover:bg-slate-800 text-slate-200 border border-slate-700 transition-colors shadow-sm"
           >
             <Download className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Export Markdown</span>
+            <span>Export MD</span>
           </button>
 
           <button
@@ -153,17 +187,6 @@ export const ResultsView: React.FC<ResultsViewProps> = React.memo(({
           </button>
         </div>
       </div>
-
-      {/* RENDER IDEAS RESULT */}
-      {activeResult.type === 'ideas' && (
-        <IdeasResultsSection
-          data={activeResult.data}
-          copiedId={copiedId}
-          onCopy={copyToClipboard}
-          onNavigate={onNavigate}
-          onGenerateCampaignFromIdea={onGenerateCampaignFromIdea}
-        />
-      )}
 
       {/* RENDER CAMPAIGN RESULT */}
       {activeResult.type === 'campaign' && (
@@ -1190,127 +1213,4 @@ const AnalyzeResultsSection: React.FC<{
   );
 });
 
-/* Ideas Results Section */
-const IdeasResultsSection = React.memo<{
-  data: IdeasResult;
-  copiedId: string | null;
-  onCopy: (text: string, label: string) => void;
-  onNavigate: (page: PageView) => void;
-  onGenerateCampaignFromIdea?: (ideaTitle: string, ideaDetails?: string) => void;
-}>(({ data, copiedId, onCopy, onNavigate, onGenerateCampaignFromIdea }) => {
-  return (
-    <div className="space-y-6">
-      <div className="bg-[#121824] p-5 rounded-2xl border border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">
-            Niche / Topic
-          </span>
-          <h2 className="text-lg font-extrabold text-white">
-            {data.input.niche}
-          </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Audience: {data.input.audience || 'General'} • Goal: {data.input.goal || 'Audience Growth'}
-          </p>
-        </div>
-        <button
-          onClick={() => onNavigate('campaign')}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow transition-colors shrink-0"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Turn Idea into Campaign</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {data.ideas.map((idea, idx) => (
-          <div
-            key={idx}
-            className="bg-[#121824] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-md flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-amber-400 bg-amber-950/60 px-2.5 py-0.5 rounded-md border border-amber-800/40">
-                  Idea #{idx + 1}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold text-slate-400 bg-slate-800/60 px-2 py-0.5 rounded-md border border-slate-700/50">
-                    {idea.difficulty || 'Beginner'}
-                  </span>
-                  <span className="text-[11px] font-semibold text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-800/40">
-                    {idea.angle || 'Educational'}
-                  </span>
-                </div>
-              </div>
-
-              <h3 className="text-base font-extrabold text-white leading-snug">
-                "{idea.title}"
-              </h3>
-
-              <div className="bg-[#0a0d14] p-3 rounded-xl border border-slate-800/80 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
-                  Why it works
-                </span>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  {idea.whyItWorks}
-                </p>
-              </div>
-
-              <div className="bg-[#0a0d14] p-3 rounded-xl border border-slate-800/80 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider block">
-                  Suggested Hook
-                </span>
-                <p className="text-xs text-amber-200/90 font-medium italic leading-relaxed">
-                  "{idea.hook}"
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-slate-300 pt-1">
-                <span className="text-slate-400 font-semibold">Best platforms:</span>
-                <span className="font-bold text-indigo-300 bg-indigo-950/40 px-2.5 py-1 rounded-lg border border-indigo-800/30">
-                  {idea.bestPlatforms}
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => onCopy(`Idea: ${idea.title}\nWhy it works: ${idea.whyItWorks}\nHook: ${idea.hook}\nBest platforms: ${idea.bestPlatforms}`, `Idea #${idx + 1}`)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-              >
-                {copiedId === `Idea #${idx + 1}` ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-400">Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Idea</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                id={`ideas-view-create-campaign-btn-${idx}`}
-                onClick={() => {
-                  if (onGenerateCampaignFromIdea) {
-                    onGenerateCampaignFromIdea(idea.title, idea.whyItWorks);
-                  } else {
-                    onNavigate('campaign');
-                  }
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm transition-colors touch-manipulation"
-              >
-                <span>Create Full Campaign</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-});
 
