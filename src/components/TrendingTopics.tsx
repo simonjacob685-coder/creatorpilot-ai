@@ -28,13 +28,12 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 1, y: 0 },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.35,
-      ease: [0.21, 0.47, 0.32, 0.98],
+      duration: 0,
     },
   },
 };
@@ -294,7 +293,7 @@ export const TrendingTopics: React.FC<TrendingTopicsProps> = ({
             <motion.div
               key={idx}
               variants={itemVariants}
-              className="bg-[#0e131d] hover:bg-[#111724] border border-slate-800 hover:border-indigo-500/50 rounded-xl p-5 flex flex-col justify-between space-y-4 transition-all group shadow-sm"
+              className="bg-[#0e131d] hover:bg-[#111724] border border-slate-800 hover:border-indigo-500/50 rounded-xl p-5 flex flex-col justify-between space-y-4 group shadow-sm"
             >
               <div className="space-y-3">
                 {/* Header Badge */}
