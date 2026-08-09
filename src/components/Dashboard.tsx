@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PageView, ActiveResult } from '../types';
 import { Wand2, Repeat, BarChart3, ArrowRight, Sparkles, Clock, FileText, Trash2, ExternalLink, Search, Heart, Filter, X } from 'lucide-react';
 import { TrendingTopics } from './TrendingTopics';
@@ -19,6 +19,36 @@ interface DashboardProps {
 }
 
 const FAVORITES_KEY = 'creator_favorite_ids_v1';
+
+/* Lazy-mounts heavy sections only once they scroll near the viewport,
+   so the Dashboard doesn't render everything at once on load. */
+const LazyMount: React.FC<{ children: React.ReactNode; minHeight?: string }> = ({ children, minHeight = '240px' }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (isVisible) return;
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '400px 0px' }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isVisible]);
+
+  return (
+    <div ref={ref} style={isVisible ? undefined : { minHeight }}>
+      {isVisible ? children : null}
+    </div>
+  );
+};
 
 export const Dashboard: React.FC<DashboardProps> = React.memo(({
   onNavigate,
@@ -136,7 +166,7 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
       <TodaysGoal />
 
       {/* Creator Brand Logo Generator Section */}
-      <BrandLogoGenerator />
+      <LazyMount minHeight="440px"><BrandLogoGenerator /></LazyMount>
 
       {/* Core Action Cards Required by User Prompt */}
       <div className="space-y-4">
@@ -242,24 +272,28 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
       </div>
 
       {/* Creator Production Roadmap Checklist */}
-      <CreatorWorkflowChecklist />
+      <LazyMount minHeight="300px"><CreatorWorkflowChecklist /></LazyMount>
 
       {/* Content Quality Checklist & Creator Score */}
-      <ContentQualityChecklist />
+      <LazyMount minHeight="300px"><ContentQualityChecklist /></LazyMount>
 
       {/* Creator Templates & Content Idea Bank */}
-      <TemplateLibrary onSelectCampaignTopic={onSelectCampaignTopic} />
+      <LazyMount minHeight="300px"><TemplateLibrary onSelectCampaignTopic={onSelectCampaignTopic} /></LazyMount>
 
       {/* Trending Topics Component Grounded by Google Search */}
-      <TrendingTopics
-        onSelectCampaignTopic={onSelectCampaignTopic}
-      />
+      <LazyMount minHeight="400px">
+        <TrendingTopics
+          onSelectCampaignTopic={onSelectCampaignTopic}
+        />
+      </LazyMount>
 
       {/* Favorite Campaigns Quick Access Component */}
-      <FavoriteCampaigns
-        savedHistory={savedHistory}
-        onSelectResult={onSelectResult}
-      />
+      <LazyMount minHeight="200px">
+        <FavoriteCampaigns
+          savedHistory={savedHistory}
+          onSelectResult={onSelectResult}
+        />
+      </LazyMount>
 
       {/* History / Saved AI Outputs Section with Search & Filter */}
       <div className="space-y-4 pt-4">
