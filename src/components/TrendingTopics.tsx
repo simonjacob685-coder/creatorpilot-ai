@@ -264,7 +264,7 @@ export const TrendingTopics: React.FC<TrendingTopicsProps> = ({
           {topics.map((item, idx) => (
             <div
               key={idx}
-              className="bg-[#0e131d] hover:bg-[#111724] border border-slate-800 hover:border-indigo-500/50 rounded-xl p-5 flex flex-col justify-between space-y-4 group shadow-sm"
+              className="bg-[#0e131d] hover:bg-[#111724] border border-slate-800 hover:border-indigo-500/50 rounded-xl p-5 flex flex-col justify-between space-y-4 group"
             >
               <div className="space-y-3">
                 {/* Header Badge */}

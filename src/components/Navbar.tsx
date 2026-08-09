@@ -44,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
           className="flex items-center gap-3 group text-left focus:outline-none touch-manipulation"
           id="brand-logo-btn"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#0d121d] border border-indigo-500/50 shadow-lg shadow-indigo-500/20 group-hover:border-indigo-400 transition-all flex items-center justify-center overflow-hidden relative">
+          <div className="w-10 h-10 rounded-xl bg-[#0d121d] border border-indigo-500/50 shadow-sm group-hover:border-indigo-400 transition-all flex items-center justify-center overflow-hidden relative">
             <img
               src={brandLogoUrl}
               alt={brandName}
