@@ -1,14 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PageView, ActiveResult } from '../types';
-import { Wand2, Repeat, BarChart3, ArrowRight, Sparkles, Clock, FileText, Trash2, ExternalLink, Search, Heart, Filter, X } from 'lucide-react';
-import { TrendingTopics } from './TrendingTopics';
-import { BrandLogoGenerator } from './BrandLogoGenerator';
-import { CreatorWorkflowChecklist } from './CreatorWorkflowChecklist';
-import { ContentQualityChecklist } from './ContentQualityChecklist';
-import { DemoModeLoader } from './DemoModeLoader';
+import { Wand2, Repeat, BarChart3, ArrowRight, Sparkles, Clock, FileText, Trash2, ExternalLink, Search, Heart, X } from 'lucide-react';
 import { TemplateLibrary } from './TemplateLibrary';
 import { TodaysGoal } from './TodaysGoal';
-import { FavoriteCampaigns } from './FavoriteCampaigns';
 
 interface DashboardProps {
   onNavigate: (page: PageView) => void;
@@ -150,7 +144,6 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <DemoModeLoader onLoadDemo={onSelectResult} />
           <button
             onClick={() => onNavigate('campaign')}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all"
@@ -164,9 +157,6 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
 
       {/* Today's Focus Goal Input Field Widget */}
       <TodaysGoal />
-
-      {/* Creator Brand Logo Generator Section */}
-      <LazyMount minHeight="440px"><BrandLogoGenerator /></LazyMount>
 
       {/* Core Action Cards Required by User Prompt */}
       <div className="space-y-4">
@@ -271,29 +261,8 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
         </div>
       </div>
 
-      {/* Creator Production Roadmap Checklist */}
-      <LazyMount minHeight="300px"><CreatorWorkflowChecklist /></LazyMount>
-
-      {/* Content Quality Checklist & Creator Score */}
-      <LazyMount minHeight="300px"><ContentQualityChecklist /></LazyMount>
-
       {/* Creator Templates & Content Idea Bank */}
       <LazyMount minHeight="300px"><TemplateLibrary onSelectCampaignTopic={onSelectCampaignTopic} /></LazyMount>
-
-      {/* Trending Topics Component Grounded by Google Search */}
-      <LazyMount minHeight="400px">
-        <TrendingTopics
-          onSelectCampaignTopic={onSelectCampaignTopic}
-        />
-      </LazyMount>
-
-      {/* Favorite Campaigns Quick Access Component */}
-      <LazyMount minHeight="200px">
-        <FavoriteCampaigns
-          savedHistory={savedHistory}
-          onSelectResult={onSelectResult}
-        />
-      </LazyMount>
 
       {/* History / Saved AI Outputs Section with Search & Filter */}
       <div className="space-y-4 pt-4">
@@ -386,11 +355,6 @@ export const Dashboard: React.FC<DashboardProps> = React.memo(({
                   : 'Try clearing your search query or switching sort filters.'}
               </p>
             </div>
-            {savedHistory.length === 0 && (
-              <div className="pt-2 flex justify-center">
-                <DemoModeLoader onLoadDemo={onSelectResult} />
-              </div>
-            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

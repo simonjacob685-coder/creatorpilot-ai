@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'motion/react';
 import { TrendingTopicItem, GroundingSource } from '../types';
 import { Flame, RefreshCw, Sparkles, ExternalLink, Search, Lightbulb, TrendingUp, Compass, ArrowRight, Wand2 } from 'lucide-react';
 
@@ -15,28 +14,6 @@ const CATEGORIES = [
   'Productivity',
   'Pop Culture'
 ];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.05,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 1, y: 0 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0,
-    },
-  },
-};
 
 const FALLBACK_TOPICS: Record<string, TrendingTopicItem[]> = {
   'All': [
@@ -194,9 +171,7 @@ export const TrendingTopics: React.FC<TrendingTopicsProps> = ({
   }, [selectedCategory, fetchTrendingTopics]);
 
   return (
-    <div className="bg-[#121824] border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl relative overflow-hidden">
-      {/* Glow Effect Accent */}
-      <div className="hidden sm:block absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div className="bg-[#121824] border border-slate-800 rounded-2xl p-6 space-y-6 shadow-sm relative overflow-hidden">
 
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
@@ -282,17 +257,13 @@ export const TrendingTopics: React.FC<TrendingTopicsProps> = ({
         </div>
       ) : (
         /* Trends Grid */
-        <motion.div
+        <div
           key={selectedCategory + topics.length}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
         >
           {topics.map((item, idx) => (
-            <motion.div
+            <div
               key={idx}
-              variants={itemVariants}
               className="bg-[#0e131d] hover:bg-[#111724] border border-slate-800 hover:border-indigo-500/50 rounded-xl p-5 flex flex-col justify-between space-y-4 group shadow-sm"
             >
               <div className="space-y-3">
@@ -360,9 +331,9 @@ export const TrendingTopics: React.FC<TrendingTopicsProps> = ({
                   </button>
                 )}
               </div>
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       )}
 
       {/* Grounding Web Citations Footer */}

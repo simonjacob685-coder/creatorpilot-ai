@@ -49,7 +49,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectCampai
   return (
     <div
       id="creator-templates-library-widget"
-      className="bg-[#121824] border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl relative overflow-hidden"
+      className="bg-[#121824] border border-slate-800 rounded-2xl p-6 space-y-6 shadow-sm relative overflow-hidden"
     >
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
@@ -116,7 +116,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onSelectCampai
           {filteredTemplates.map((template) => (
             <div
               key={template.id}
-              className="bg-[#0a0d14] hover:bg-[#161e2e] border border-slate-800/90 hover:border-amber-500/40 rounded-2xl p-5 transition-all space-y-3 flex flex-col justify-between group shadow-sm"
+              className="bg-[#0a0d14] hover:bg-[#161e2e] border border-slate-800/90 hover:border-amber-500/40 rounded-2xl p-5 transition-all space-y-3 flex flex-col justify-between group"
             >
               <div className="space-y-2.5">
                 {/* Badges */}
