@@ -36,7 +36,7 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0c1017]/95 border-b border-slate-800/80 px-4 lg:px-8 py-3.5 transition-colors">
+    <header className="sticky top-0 z-50 bg-[#0c1017] border-b border-slate-800/80 px-4 lg:px-8 py-3.5 transition-colors">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Brand Logo */}
         <button
